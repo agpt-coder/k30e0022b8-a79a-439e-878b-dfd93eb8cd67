@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "k3"
+version = "0.1.0"
+description = "Based on the information gathered, the kiosk management application requirements include a number of diverse and complex features tailored to a municipal environment. The application requires compatibility with various operating systems such as Windows, macOS, and Linux to ensure broad accessibility. It must support a wide range of peripheral hardware including keyboards, mice, monitors, printers, USB storage devices, barcode scanners, and RFID readers, catering to different user and operational needs."
+authors = ["AutoGPT <info@agpt.co>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.11"
+fastapi = "*"
+passlib = {version = "*", extras = ["bcrypt"]}
+prisma = "*"
+pydantic = "*"
+python-jose = "*"
+uvicorn = "*"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

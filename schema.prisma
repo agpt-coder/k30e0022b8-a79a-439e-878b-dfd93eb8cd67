@@ -1,0 +1,182 @@
+// datasource db defines the database connection settings.
+// It is configured for PostgreSQL and uses an environment variable for the connection URL.
+// The 'extensions' feature enables the use of PostgreSQL-specific data types.
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+}
+
+// generator db configures Prisma Client settings.
+// It is set up to use Prisma Client Python with asyncio interface and specific features.
+generator db {
+  provider             = "prisma-client-py"
+  interface            = "asyncio"
+  recursive_type_depth = 5
+  previewFeatures      = ["postgresqlExtensions"]
+}
+
+model User {
+  id        String   @id @default(dbgenerated("gen_random_uuid()"))
+  email     String   @unique
+  password  String
+  role      UserRole @default(CONTENTMANAGER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ContentChanges    ContentChange[]
+  DeviceStatuses    DeviceStatus[]
+  Reports           Report[]
+  Feedbacks         Feedback[]
+  PeripheralDevices PeripheralDeviceUsage[]
+}
+
+model PeripheralDevice {
+  id        String               @id @default(dbgenerated("gen_random_uuid()"))
+  name      String
+  type      PeripheralDeviceType
+  createdAt DateTime             @default(now())
+
+  Usages PeripheralDeviceUsage[]
+}
+
+model PeripheralDeviceUsage {
+  id       String   @id @default(dbgenerated("gen_random_uuid()"))
+  deviceId String
+  userId   String
+  usedAt   DateTime @default(now())
+
+  Device PeripheralDevice @relation(fields: [deviceId], references: [id])
+  User   User             @relation(fields: [userId], references: [id])
+}
+
+model Content {
+  id          String        @id @default(dbgenerated("gen_random_uuid()"))
+  title       String
+  description String?
+  type        ContentType
+  status      ContentStatus @default(DRAFT)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  Changes       ContentChange[]
+  Schedules     ContentSchedule[]
+  Localizations Localization[]
+  Deployments   Deployment[]
+}
+
+model ContentChange {
+  id         String            @id @default(dbgenerated("gen_random_uuid()"))
+  contentId  String
+  changedBy  String
+  changeType ContentChangeType
+  createdAt  DateTime          @default(now())
+
+  Content Content @relation(fields: [contentId], references: [id])
+  User    User    @relation(fields: [changedBy], references: [id])
+}
+
+model ContentSchedule {
+  id        String    @id @default(dbgenerated("gen_random_uuid()"))
+  contentId String
+  start     DateTime
+  end       DateTime?
+  active    Boolean   @default(true)
+
+  Content Content @relation(fields: [contentId], references: [id])
+}
+
+model Device {
+  id        String   @id @default(dbgenerated("gen_random_uuid()"))
+  name      String
+  location  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  Statuses    DeviceStatus[]
+  Deployments Deployment[]
+}
+
+model DeviceStatus {
+  id         String   @id @default(dbgenerated("gen_random_uuid()"))
+  deviceId   String
+  status     String
+  reportedAt DateTime @default(now())
+
+  Device       Device  @relation(fields: [deviceId], references: [id])
+  User         User?   @relation(fields: [reportedById], references: [id])
+  reportedById String?
+}
+
+model Deployment {
+  id         String   @id @default(dbgenerated("gen_random_uuid()"))
+  deviceId   String
+  contentId  String
+  deployedAt DateTime @default(now())
+
+  Device  Device  @relation(fields: [deviceId], references: [id])
+  Content Content @relation(fields: [contentId], references: [id])
+}
+
+model Localization {
+  id          String   @id @default(dbgenerated("gen_random_uuid()"))
+  contentId   String
+  language    String
+  translation String
+  createdAt   DateTime @default(now())
+
+  Content Content @relation(fields: [contentId], references: [id])
+}
+
+model Report {
+  id          String   @id @default(dbgenerated("gen_random_uuid()"))
+  title       String
+  description String?
+  userId      String
+  createdAt   DateTime @default(now())
+
+  User User @relation(fields: [userId], references: [id])
+}
+
+model Feedback {
+  id          String   @id @default(dbgenerated("gen_random_uuid()"))
+  comment     String
+  submittedBy String
+  submittedAt DateTime @default(now())
+
+  User User? @relation(fields: [submittedBy], references: [id])
+}
+
+enum UserRole {
+  CONTENTMANAGER
+  DEVICEMANAGER
+  ANALYST
+}
+
+enum PeripheralDeviceType {
+  KEYBOARD
+  MOUSE
+  MONITOR
+  PRINTER
+  USB_STORAGE
+  BARCODE_SCANNER
+  RFID_READER
+}
+
+enum ContentType {
+  IMAGE
+  VIDEO
+  NEWS_TICKER
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ContentChangeType {
+  CREATED
+  UPDATED
+  DELETED
+}
+
